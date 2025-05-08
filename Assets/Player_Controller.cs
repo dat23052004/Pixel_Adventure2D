@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,7 +28,7 @@ public class Player_Controller : MonoBehaviour
     bool canDash = true;
 
     public bool doubleJump = false;
-
+    
 
     // Start is called before the first frame update
     void Start()
@@ -67,8 +67,7 @@ public class Player_Controller : MonoBehaviour
 
         if(Input.GetKeyDown (Constant.KEY_JUMP) == true)
         {
-            
-                
+                            
                 PlayerJump();
                 smokingRunning.Stop();              
         }
@@ -99,6 +98,7 @@ public class Player_Controller : MonoBehaviour
         
         if (currentAnim != animationName && isNonLoopAnimation == false)
         {
+           
             currentAnim = animationName;
             animator.Play(currentAnim);
         }
@@ -106,21 +106,24 @@ public class Player_Controller : MonoBehaviour
     private void PlayingNoonLoopAnimation(string animationName)
     {
         if(currentAnim != animationName)
-        {
+        {            
             currentAnim = animationName;
             animator.Play(currentAnim);
         }
+        
     }
 
     private void PlayerJump()
     {
         Debug.Log(doubleJump);
+        
         if(onGround==true || doubleJump)
         {
             Debug.Log("jump");
             rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.AddForce(new Vector2(0, 1) * jumpStrength, ForceMode2D.Impulse);
-            StartCoroutine(AnimationJump());
+            if(onGround == true) StartCoroutine(AnimationJump());
+            else StartCoroutine(AnimationDoubleJump());
             doubleJump = !doubleJump;
         }
     }
@@ -129,6 +132,14 @@ public class Player_Controller : MonoBehaviour
     {
         yield return new WaitForSeconds(0.1f);
         PlayingAnimation(Constant.ANIM_JUMP);
+    }
+    IEnumerator AnimationDoubleJump()
+    {
+        yield return new WaitForSeconds(0.1f);
+        yield return StartCoroutine(PrepareNonLoopAnimation(Constant.ANIM_DOUBLE_JUMP));
+        PlayingAnimation(Constant.ANIM_JUMP);
+
+
     }
 
     void PlayerRotation(bool boolValue)
@@ -140,9 +151,9 @@ public class Player_Controller : MonoBehaviour
     {
         Vector2 newMoveVector = new Vector2((move.x * moveSpeed) + movingPlatformVelocityX, rb.velocity.y);
         rb.velocity = newMoveVector;
+        Debug.Log(rb.velocity);
         if(onGround == true)
-        {
-           
+        {           
             PlayingAnimation(Constant.ANIM_RUN);
         }
     }
@@ -178,7 +189,7 @@ public class Player_Controller : MonoBehaviour
         dashTrailRenderer.emitting = true;
         canDash = false;
         isDashing = true;
-        if(playerSpriteRenderer.flipX == true)
+        if(playerSpriteRenderer.flipX == false)
         {
             dashDirection = new Vector2 (1, 0);
         }else
@@ -195,19 +206,5 @@ public class Player_Controller : MonoBehaviour
         canDash = true;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            onGround = true;
-            
-        }
-    }
-    void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            onGround = false;
-        }
-    }
+    
 }
