@@ -28,9 +28,22 @@ public class Player_Controller : MonoBehaviour
     bool isDashing = false;
     bool canDash = true;
 
-    public bool doubleJump = false;
-    
+    private bool doubleJump = false;
 
+
+    private bool isWallSliding;
+    public float wallSlidingSpeed = 2f;
+
+    private bool isWallJumping;
+    private float wallJumpingDirection ;
+    private float wallJumpingTime = 0.2f;
+    private float wallJumpingCounter;
+    private float wallJumpingDuration = 0.4f;
+    private Vector2 wallJumpingPower = new Vector2(8f,16f);
+
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private LayerMask wallLayer;
+    [SerializeField] private Transform wallCheck;
     // Start is called before the first frame update
     void Start()
     {
@@ -41,6 +54,8 @@ public class Player_Controller : MonoBehaviour
     void Update()
     {
         KeyboardController();
+        WallSlide();
+        HandleFallAnimation();
     }
 
     void KeyboardController()
@@ -61,7 +76,8 @@ public class Player_Controller : MonoBehaviour
 
         }
         if (Input.GetKey(Constant.KEY_MOVE_LEFT) && !isDashing)
-        {           
+        {         
+           
                 PlayerMoveLeft();   
             isMoving = true;
 
@@ -76,7 +92,8 @@ public class Player_Controller : MonoBehaviour
             }
         }
         else
-        { 
+        {
+            
             PlayerStopMovement();
             if (smokingRunning.isPlaying)
             {
@@ -86,8 +103,15 @@ public class Player_Controller : MonoBehaviour
 
         if (Input.GetKeyDown (Constant.KEY_JUMP) == true)
         {
-                            
-                PlayerJump();                           
+
+            if (isWallSliding)
+            {
+                WallJump();
+            }
+            else
+            {
+                PlayerJump();
+            }
         }
         
     }
@@ -139,7 +163,7 @@ public class Player_Controller : MonoBehaviour
         {
             if (!smokingRunning.isPlaying)
             {
-                Debug.Log("smoke");
+                
                 smokingRunning.Play();
             }
             rb.velocity = new Vector2(rb.velocity.x, 0);
@@ -173,14 +197,22 @@ public class Player_Controller : MonoBehaviour
     {
         Vector2 newMoveVector = new Vector2((move.x * moveSpeed) + movingPlatformVelocityX, rb.velocity.y);
         rb.velocity = newMoveVector;
-        //Debug.Log(rb.velocity);
+        
         if(onGround == true)
         {           
             PlayingAnimation(Constant.ANIM_RUN);
         }
+        
     }
     private void PlayerStopMovement()
     {
+        if (!Input.GetKey(Constant.KEY_MOVE_LEFT) && !Input.GetKey(Constant.KEY_MOVE_RIGHT))
+        {
+            rb.velocity = new Vector2(
+                Mathf.Lerp(rb.velocity.x, 0, Time.deltaTime * 10f), 
+                rb.velocity.y
+            );
+        }
         AnimotionStop();
     }
 
@@ -188,7 +220,7 @@ public class Player_Controller : MonoBehaviour
     {
        if(onGround == true)
         {
-            Debug.Log("ỏnound");
+            
             PlayingAnimation(Constant.ANIM_IDLE);
         }
     }
@@ -205,7 +237,7 @@ public class Player_Controller : MonoBehaviour
     {
         PlayerMove(vectorToLeft);
         PlayerRotation(true);
-
+        
     }
 
     IEnumerator PlayerDash()
@@ -230,5 +262,58 @@ public class Player_Controller : MonoBehaviour
         canDash = true;
     }
 
-    
+    private bool IsWalled()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, 1.5f, wallLayer);
+    }
+
+    private void WallSlide()
+    {
+        Debug.Log(IsWalled());
+        if (IsWalled() && !onGround && rb.velocity.y <0)
+        {
+            PlayingAnimation(Constant.ANIM_WALL);
+            Debug.Log("hihi");
+            isWallSliding = true;
+            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
+
+    private void WallJump()
+    {
+        if(isWallSliding)
+        {
+            
+            isWallSliding = false;
+            wallJumpingDirection = playerSpriteRenderer.flipX ? 1 : -1;
+            rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            doubleJump = true; 
+            
+            playerSpriteRenderer.flipX = wallJumpingDirection == -1;
+
+            PlayingAnimation(Constant.ANIM_JUMP);
+            Invoke(nameof(StopWallJumping), wallJumpingDuration);
+        }
+        
+        
+    }
+
+    private void StopWallJumping()
+    {
+        isWallJumping = false;
+    }
+
+
+    private void HandleFallAnimation()
+    {
+        if (!onGround && !isWallSliding && rb.velocity.y < 0)
+        {
+            PlayingAnimation(Constant.ANIM_FALL);
+        }
+    }
 }
