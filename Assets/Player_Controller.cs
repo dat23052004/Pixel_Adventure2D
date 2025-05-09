@@ -15,6 +15,7 @@ public class Player_Controller : MonoBehaviour
     public float moveSpeed =1;
     public float jumpStrength = 1;
     public bool onGround = false;
+    
     float movingPlatformVelocityX = 0;
 
     public SpriteRenderer playerSpriteRenderer;
@@ -51,25 +52,42 @@ public class Player_Controller : MonoBehaviour
                 StartCoroutine(PlayerDash());
             }
         }
-
+        bool isMoving = false;
         if (Input.GetKey(Constant.KEY_MOVE_RIGHT) && !isDashing)
         {
-                PlayerMoveRight();           
+                PlayerMoveRight();
+            isMoving = true;
+
+
         }
         if (Input.GetKey(Constant.KEY_MOVE_LEFT) && !isDashing)
         {           
-                PlayerMoveLeft();            
-        }
-        if(!Input.GetKey(Constant.KEY_MOVE_RIGHT) && !Input.GetKey(Constant.KEY_MOVE_LEFT))
-        {
-            PlayerStopMovement();
+                PlayerMoveLeft();   
+            isMoving = true;
+
         }
 
-        if(Input.GetKeyDown (Constant.KEY_JUMP) == true)
+        if (isMoving || !onGround)
+        {
+            if (!smokingRunning.isPlaying)
+            {
+                smokingRunning.Play();
+                
+            }
+        }
+        else
+        { 
+            PlayerStopMovement();
+            if (smokingRunning.isPlaying)
+            {
+                smokingRunning.Stop();
+            }
+        }
+
+        if (Input.GetKeyDown (Constant.KEY_JUMP) == true)
         {
                             
-                PlayerJump();
-                smokingRunning.Stop();              
+                PlayerJump();                           
         }
         
     }
@@ -115,11 +133,15 @@ public class Player_Controller : MonoBehaviour
 
     private void PlayerJump()
     {
-        Debug.Log(doubleJump);
+        
         
         if(onGround==true || doubleJump)
         {
-            Debug.Log("jump");
+            if (!smokingRunning.isPlaying)
+            {
+                Debug.Log("smoke");
+                smokingRunning.Play();
+            }
             rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.AddForce(new Vector2(0, 1) * jumpStrength, ForceMode2D.Impulse);
             if(onGround == true) StartCoroutine(AnimationJump());
@@ -151,7 +173,7 @@ public class Player_Controller : MonoBehaviour
     {
         Vector2 newMoveVector = new Vector2((move.x * moveSpeed) + movingPlatformVelocityX, rb.velocity.y);
         rb.velocity = newMoveVector;
-        Debug.Log(rb.velocity);
+        //Debug.Log(rb.velocity);
         if(onGround == true)
         {           
             PlayingAnimation(Constant.ANIM_RUN);
@@ -166,6 +188,7 @@ public class Player_Controller : MonoBehaviour
     {
        if(onGround == true)
         {
+            Debug.Log("ỏnound");
             PlayingAnimation(Constant.ANIM_IDLE);
         }
     }
@@ -174,6 +197,7 @@ public class Player_Controller : MonoBehaviour
     {
         PlayerMove(vectorToRight);
         PlayerRotation(false);
+        smokingRunning.Play();
 
     }
 
@@ -197,9 +221,9 @@ public class Player_Controller : MonoBehaviour
             dashDirection = new Vector2 (-1, 0);
         }
         rb.velocity = dashDirection*dashPower;
-        StartCoroutine(PrepareNonLoopAnimation(Constant.ANIM_DASH));
+        //StartCoroutine(PrepareNonLoopAnimation(Constant.ANIM_DASH));
         yield return new WaitForSeconds(0.1f);
-        rb.velocity = dashDirection*dashPower;
+        rb.velocity = dashDirection*moveSpeed;
         isDashing =false;
         dashTrailRenderer.emitting=false;
         yield return new WaitForSeconds(1f);
