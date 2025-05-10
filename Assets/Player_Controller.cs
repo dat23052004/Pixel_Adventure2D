@@ -269,7 +269,7 @@ public class Player_Controller : MonoBehaviour
 
     private void WallSlide()
     {
-        Debug.Log(IsWalled());
+       
         if (IsWalled() && !onGround && rb.velocity.y <0)
         {
             PlayingAnimation(Constant.ANIM_WALL);
