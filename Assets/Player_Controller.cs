@@ -8,14 +8,15 @@ public class Player_Controller : MonoBehaviour
     public ParticleSystem smokingRunning;
     //private bool canTakeDamege = true;
     public bool isNonLoopAnimation = false;
+    public bool inputEnabled = true;
     public Rigidbody2D rb;
-    Vector2 vectorToRight = new Vector2(1,0);
-    Vector2 vectorToLeft = new Vector2(-1,0);
-    private string currentAnim ="";
-    public float moveSpeed =1;
+    Vector2 vectorToRight = new Vector2(1, 0);
+    Vector2 vectorToLeft = new Vector2(-1, 0);
+    private string currentAnim = "";
+    public float moveSpeed = 1;
     public float jumpStrength = 1;
     public bool onGround = false;
-    
+
     float movingPlatformVelocityX = 0;
 
     public SpriteRenderer playerSpriteRenderer;
@@ -35,11 +36,11 @@ public class Player_Controller : MonoBehaviour
     public float wallSlidingSpeed = 2f;
 
     private bool isWallJumping;
-    private float wallJumpingDirection ;
+    private float wallJumpingDirection;
     private float wallJumpingTime = 0.2f;
     private float wallJumpingCounter;
     private float wallJumpingDuration = 0.4f;
-    private Vector2 wallJumpingPower = new Vector2(8f,16f);
+    private Vector2 wallJumpingPower = new Vector2(8f, 16f);
 
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private LayerMask wallLayer;
@@ -47,22 +48,28 @@ public class Player_Controller : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if (!inputEnabled) return;
         KeyboardController();
         WallSlide();
         HandleFallAnimation();
     }
 
+    public void Teleport(Vector3 pos)
+    {
+        rb.linearVelocity = Vector2.zero;
+        transform.position = pos;
+    }
+
     void KeyboardController()
     {
-        if(Input.GetKeyDown(Constant.KEY_DASH)==true)
+        if (Input.GetKeyDown(Constant.KEY_DASH) == true)
         {
-            if(canDash==true)
+            if (canDash == true)
             {
                 StartCoroutine(PlayerDash());
             }
@@ -70,15 +77,15 @@ public class Player_Controller : MonoBehaviour
         bool isMoving = false;
         if (Input.GetKey(Constant.KEY_MOVE_RIGHT) && !isDashing)
         {
-                PlayerMoveRight();
+            PlayerMoveRight();
             isMoving = true;
 
 
         }
         if (Input.GetKey(Constant.KEY_MOVE_LEFT) && !isDashing)
-        {         
-           
-                PlayerMoveLeft();   
+        {
+
+            PlayerMoveLeft();
             isMoving = true;
 
         }
@@ -88,12 +95,12 @@ public class Player_Controller : MonoBehaviour
             if (!smokingRunning.isPlaying)
             {
                 smokingRunning.Play();
-                
+
             }
         }
         else
         {
-            
+
             PlayerStopMovement();
             if (smokingRunning.isPlaying)
             {
@@ -101,7 +108,7 @@ public class Player_Controller : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown (Constant.KEY_JUMP) == true)
+        if (Input.GetKeyDown(Constant.KEY_JUMP) == true)
         {
 
             if (isWallSliding)
@@ -113,7 +120,7 @@ public class Player_Controller : MonoBehaviour
                 PlayerJump();
             }
         }
-        
+
     }
 
     IEnumerator PrepareNonLoopAnimation(string animationName)
@@ -122,11 +129,11 @@ public class Player_Controller : MonoBehaviour
         PlayingNoonLoopAnimation(animationName);
         yield return new WaitForEndOfFrame();
         var currentAnimationInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if(currentAnimationInfo.IsName(animationName) ==true)
+        if (currentAnimationInfo.IsName(animationName) == true)
         {
             var animationDuration = currentAnimationInfo.length;
             yield return new WaitForSeconds(animationDuration);
-            isNonLoopAnimation=false;
+            isNonLoopAnimation = false;
         }
         else
         {
@@ -137,38 +144,38 @@ public class Player_Controller : MonoBehaviour
 
     private void PlayingAnimation(string animationName)
     {
-        
+
         if (currentAnim != animationName && isNonLoopAnimation == false)
         {
-           
+
             currentAnim = animationName;
             animator.Play(currentAnim);
         }
     }
     private void PlayingNoonLoopAnimation(string animationName)
     {
-        if(currentAnim != animationName)
-        {            
+        if (currentAnim != animationName)
+        {
             currentAnim = animationName;
             animator.Play(currentAnim);
         }
-        
+
     }
 
     private void PlayerJump()
     {
-        
-        
-        if(onGround==true || doubleJump)
+
+
+        if (onGround == true || doubleJump)
         {
             if (!smokingRunning.isPlaying)
             {
-                
+
                 smokingRunning.Play();
             }
-            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
             rb.AddForce(new Vector2(0, 1) * jumpStrength, ForceMode2D.Impulse);
-            if(onGround == true) StartCoroutine(AnimationJump());
+            if (onGround == true) StartCoroutine(AnimationJump());
             else StartCoroutine(AnimationDoubleJump());
             doubleJump = !doubleJump;
         }
@@ -195,22 +202,22 @@ public class Player_Controller : MonoBehaviour
 
     void PlayerMove(Vector2 move)
     {
-        Vector2 newMoveVector = new Vector2((move.x * moveSpeed) + movingPlatformVelocityX, rb.velocity.y);
-        rb.velocity = newMoveVector;
-        
-        if(onGround == true)
-        {           
+        Vector2 newMoveVector = new Vector2((move.x * moveSpeed) + movingPlatformVelocityX, rb.linearVelocity.y);
+        rb.linearVelocity = newMoveVector;
+
+        if (onGround == true)
+        {
             PlayingAnimation(Constant.ANIM_RUN);
         }
-        
+
     }
     private void PlayerStopMovement()
     {
         if (!Input.GetKey(Constant.KEY_MOVE_LEFT) && !Input.GetKey(Constant.KEY_MOVE_RIGHT))
         {
-            rb.velocity = new Vector2(
-                Mathf.Lerp(rb.velocity.x, 0, Time.deltaTime * 10f), 
-                rb.velocity.y
+            rb.linearVelocity = new Vector2(
+                Mathf.Lerp(rb.linearVelocity.x, 0, Time.deltaTime * 10f),
+                rb.linearVelocity.y
             );
         }
         AnimotionStop();
@@ -218,9 +225,9 @@ public class Player_Controller : MonoBehaviour
 
     private void AnimotionStop()
     {
-       if(onGround == true)
+        if (onGround == true)
         {
-            
+
             PlayingAnimation(Constant.ANIM_IDLE);
         }
     }
@@ -237,7 +244,7 @@ public class Player_Controller : MonoBehaviour
     {
         PlayerMove(vectorToLeft);
         PlayerRotation(true);
-        
+
     }
 
     IEnumerator PlayerDash()
@@ -245,19 +252,20 @@ public class Player_Controller : MonoBehaviour
         dashTrailRenderer.emitting = true;
         canDash = false;
         isDashing = true;
-        if(playerSpriteRenderer.flipX == false)
+        if (playerSpriteRenderer.flipX == false)
         {
-            dashDirection = new Vector2 (1, 0);
-        }else
-        {
-            dashDirection = new Vector2 (-1, 0);
+            dashDirection = new Vector2(1, 0);
         }
-        rb.velocity = dashDirection*dashPower;
+        else
+        {
+            dashDirection = new Vector2(-1, 0);
+        }
+        rb.linearVelocity = dashDirection * dashPower;
         //StartCoroutine(PrepareNonLoopAnimation(Constant.ANIM_DASH));
         yield return new WaitForSeconds(0.1f);
-        rb.velocity = dashDirection*moveSpeed;
-        isDashing =false;
-        dashTrailRenderer.emitting=false;
+        rb.linearVelocity = dashDirection * moveSpeed;
+        isDashing = false;
+        dashTrailRenderer.emitting = false;
         yield return new WaitForSeconds(1f);
         canDash = true;
     }
@@ -269,13 +277,13 @@ public class Player_Controller : MonoBehaviour
 
     private void WallSlide()
     {
-       
-        if (IsWalled() && !onGround && rb.velocity.y <0)
+
+        if (IsWalled() && !onGround && rb.linearVelocity.y < 0)
         {
             PlayingAnimation(Constant.ANIM_WALL);
             Debug.Log("hihi");
             isWallSliding = true;
-            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Clamp(rb.linearVelocity.y, -wallSlidingSpeed, float.MaxValue));
         }
         else
         {
@@ -286,21 +294,21 @@ public class Player_Controller : MonoBehaviour
 
     private void WallJump()
     {
-        if(isWallSliding)
+        if (isWallSliding)
         {
-            
+
             isWallSliding = false;
             wallJumpingDirection = playerSpriteRenderer.flipX ? 1 : -1;
-            rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
-            doubleJump = true; 
-            
+            rb.linearVelocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            doubleJump = true;
+
             playerSpriteRenderer.flipX = wallJumpingDirection == -1;
 
             PlayingAnimation(Constant.ANIM_JUMP);
             Invoke(nameof(StopWallJumping), wallJumpingDuration);
         }
-        
-        
+
+
     }
 
     private void StopWallJumping()
@@ -311,7 +319,7 @@ public class Player_Controller : MonoBehaviour
 
     private void HandleFallAnimation()
     {
-        if (!onGround && !isWallSliding && rb.velocity.y < 0)
+        if (!onGround && !isWallSliding && rb.linearVelocity.y < 0)
         {
             PlayingAnimation(Constant.ANIM_FALL);
         }

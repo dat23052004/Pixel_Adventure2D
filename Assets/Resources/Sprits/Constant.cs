@@ -26,6 +26,11 @@ public class Constant : MonoBehaviour
     public const string TAG_PLAYER = "Player";
     public const string TAG_ENEMY = "Enemy";
     public const string TAG_GROUND = "Ground";
+    public const string TAG_PICKABLE = "Pickable";
+    public const string TAG_TRAP = "Trap";
+
+    // Extra animation states
+    public const string ANIM_HIT = "Hit";
 
     // Layers
     public const string LAYER_GROUND = "Ground";

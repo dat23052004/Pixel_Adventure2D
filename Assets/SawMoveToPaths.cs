@@ -35,7 +35,12 @@ public class SawMoveToPaths : MonoBehaviour
         isWaiting = false;
     }
 
-    
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.CompareTag(Constant.TAG_PLAYER))
+            GameManager.Instance.PlayerDied();
+    }
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;

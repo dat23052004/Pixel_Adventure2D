@@ -19,10 +19,11 @@ public class PickItemManager : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag("Pickable"))
+        if (collision.gameObject.CompareTag(Constant.TAG_PICKABLE))
         {
-            Instantiate(VFXCollected,collision.gameObject.transform.position,Quaternion.identity,null);
-            Destroy(collision.gameObject);
+            Instantiate(VFXCollected, collision.gameObject.transform.position, Quaternion.identity, null);
+            collision.gameObject.SetActive(false);
+            GameManager.Instance.FruitCollected();
         }
     }
 }
